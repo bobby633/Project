@@ -1,0 +1,5 @@
+#Credentials
+consumer_key= "RHKUMj2wmGMed2hKxQxKjrwfh"
+consumer_secret = "UXhVbrFYAPGfZuucArqXVw2nDOh1EyOuXNUXIdFF9pkKKAZfvB"
+access_token= "1445429606111223811-gDUJBKu6wCcS5r2Y62m0kYpxtku6ha"
+access_token_secret = "fSyMu9pxvrfxX193oFtfEC9Hp8ENIgkxXcYP6PFepGQ4z"
