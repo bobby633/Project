@@ -11,22 +11,19 @@ auth = tweepy.AppAuthHandler(twitter_cred.consumer_key, twitter_cred.consumer_se
 class Print_Tweets():
     def stream_tweets(self,hashtags):
         for tweet in tweepy.Cursor(api.search_tweets, q=hashtags).items(20):
-            print(tweet.text)
-         #   store_tweets(tweet.text)
-            
-#class Tweets_Storer():
-#    def store_tweets(self,data):
-#        try:
-#            with open("tweets.json", 'a') as tf:
-#                tf.write(tweet.text)
-#                tf.close()
-#            return True
-#        except BaseException as e:
-#            print("Error" % str(e))
-#        return True
+         #prints the emojis on the json txt
+            with open("tweets.json", 'a') as tf:
+                tf.write(tweet.text)                   
+                print(tweet.text)
+                print("")
+                print("------------")
+                print("") 
+        tf.close() 
+        return True
+        
             
 if __name__== "__main__":
     api = tweepy.API(auth)
-    hashtags = ["trump"]
+    hashtags = ["$shib"]
     tweet_streamer = Print_Tweets()
     tweet_streamer.stream_tweets(hashtags)
