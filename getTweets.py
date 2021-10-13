@@ -8,6 +8,7 @@ import twitter_cred
 
 # Consumer keys and access tokens, used for OAuth
 auth = tweepy.AppAuthHandler(twitter_cred.consumer_key, twitter_cred.consumer_secret)
+
 class Print_Tweets():
     def stream_tweets(self,hashtags):
         for tweet in tweepy.Cursor(api.search_tweets, q=hashtags).items(20):
@@ -24,6 +25,11 @@ class Print_Tweets():
             
 if __name__== "__main__":
     api = tweepy.API(auth)
+    
     hashtags = ["$shib"]
+    ####trying to get it to have an hashtag input 
+     # hashtags = []
+    #for i in range(3):
+     #   hashtags.append(np.array(input(" ")))
     tweet_streamer = Print_Tweets()
     tweet_streamer.stream_tweets(hashtags)
