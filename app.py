@@ -1,15 +1,18 @@
-import retrievetweets 
-import getreddit
-#get it workimg 
+from UserOrWord import SearchUserorWord
+from getreddit import Reddit
 
-if __name__== "__main__":
+
+class Main:
+    def execute(choice):
+        if choice == "t":
+            SearchUserorWord.pickUserorWord()
+            print ("error")
+        elif choice == "r":
+            Reddit.get_reddit()       
+        else:
+            print ("error")
+
+if __name__== "__main__":  
     print("twitter or reddit?")
     choice = input()
-    if choice == "twitter":
-        twitter()   
-        print ("error")
-    elif choice == "reddit":
-      
-        print ("error")
-    else:
-        print ("error")
+    Main.execute(choice)

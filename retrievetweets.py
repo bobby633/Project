@@ -1,89 +1,79 @@
 import tweepy 
-from textblob import TextBlob
-import emoji
+import datetime
 import twitter_cred
 import pandas as pd
 import numpy as np
-import re
-import matplotlib.pyplot as plt
+from Cleantext import CleanText,SubandPol,Analysis
+from Graph import Graph
+import pyrebase
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
 
-class twitter:
-    def __init__(self):
-        return self
-    #Gets credentials
-    auth = tweepy.AppAuthHandler(twitter_cred.consumer_key, twitter_cred.consumer_secret)
-    api = tweepy.API(auth)
-    
-    search_word ="love"
-    start_date = "2021-11-1"
-    post = tweepy.Cursor(api.search_tweets, q=search_word,lang="en",tweet_mode="extended").items(50)
-    i = 1
-    
-    #Create a DF 
-    df = pd.DataFrame([tweet.full_text for tweet in post], columns=['Tweets'])
-    
-    #Remove special Char
-    def cleanText(text):
-        text = re.sub(r'@[A-Za-z0-9]+',' ',text) # removes mentions
-        text = re.sub(r'#',' ',text) # removes '#'
-        text = re.sub(r'RT[\s]+', ' ',text) #removes retweets
-        text = re.sub(r'https?:\/\/S+',' ',text)
-        text = re.sub(emoji.get_emoji_regexp(), r"", text)
-        return text
-    df['Tweets'] = df['Tweets'].apply(cleanText)
-    
-    #Create function to get subjecttivity
-    def getSubjectivity(text):
-        return TextBlob(text).sentiment.subjectivity
-    
-    #create function to get the polatiorty
-    def getPolarity(text):
-        return TextBlob(text).sentiment.polarity
-    
-    #create new columns
-    df['subjectivity']= df['Tweets'].apply(getSubjectivity)
-    df['polarity']=df['Tweets'].apply(getPolarity)
-    
-    def getAnalysis(score):
-        if score < 0:
-            return 'Negative'
-        elif score==0:
-            return 'Neutral'
-        else:
-            return 'Positive'
-    
-    df['Analysis'] = df['polarity'].apply(getAnalysis)
-    print(df)
-    
-    #do an if statement if they want barchart or pie or line
-    if __name__== "__main__":
-        print("bar scatter,text or pie")
-        Choice = input()
-        if Choice == 'scatter':
-            plt.figure(figsize =(5,3))
-            for i in range(0,df.shape[0]):
-                plt.scatter(df['polarity'][i],df['subjectivity'][i], color = 'Green')
-            plt.title('Sentmient analysis')
-            plt.xlabel('polarity')
-            plt.ylabel('subjectivity')
-            plt.show()
-        elif Choice == 'bar':
-        
-            df['Analysis'].value_counts()
-            #plot and visuals the counts
-            plt.title('sentiment analysis')
-            plt.xlabel('sentiment')
-            plt.ylabel('Counts')
-            df['Analysis'].value_counts().plot(kind='bar')
-            plt.show()
-        elif Choice == 'pie':
-            df['Analysis'].value_counts()
-        
-            #plot and visuals the counts
-            plt.title('sentiment analysis')
-            df['Analysis'].value_counts().plot(kind='pie')
-            plt.show()
-        elif Choice == 'text':
-            print(df)
-        else:
-            print('Not a choice')
+firebaseConfig ={
+    'apiKey': "AIzaSyD_QwEW6ivMI4TEjKxTFy2r7SPa8wdtz6I",
+    'authDomain': "sentimentanalysis-333813.firebaseapp.com",
+    'projectId': "sentimentanalysis-333813",
+    'databaseURL': 'https://sentimentanalysis-333813-default-rtdb.firebaseio.com/',
+    'storageBucket': "sentimentanalysis-333813.appspot.com",
+    'messagingSenderId': "487751248294",
+    'appId': "1:487751248294:web:810d39d332013c4ab0c767",
+    'measurementId': "G-0B2YHS542J"
+}
+firebase = pyrebase.initialize_app(firebaseConfig)
+db = firebase.database()
+
+
+
+
+auth = tweepy.AppAuthHandler(twitter_cred.consumer_key, twitter_cred.consumer_secret)
+api = tweepy.API(auth)
+class Twitter:
+    def twitter():
+   ####################Gets credentials  #########################      
+        search_word ="hate"
+        start_date = "2021-11-1"
+        post = tweepy.Cursor(api.search_tweets, q=search_word,lang="en",tweet_mode="extended").items(50) 
+        #Create a DF 
+        df = pd.DataFrame([tweet.full_text for tweet in post], columns=['Tweets'])
+        #Remove special Char
+        start = datetime.datetime.now()
+        df['Tweets'] = df['Tweets'].apply(CleanText.cleanText)
+        finish = datetime.datetime.now()
+        print(finish-start)
+        #create new columns
+        start = datetime.datetime.now()
+        df['subjectivity']= df['Tweets'].apply(SubandPol.getSubjectivity)
+        df['polarity']=df['Tweets'].apply(SubandPol.getPolarity)
+       # data = {"SearchWord":search_word,"Polarity":df['polarity'].to_json()}
+        db.child("SearchWords")
+        data = {"Word":search_word}
+        db.child("Words").push(data)
+        ref = db.child("SearchWords").get()
+        print(ref.val())
+        df['Analysis'] = df['polarity'].apply(Analysis.getAnalysis)
+        finish = datetime.datetime.now()
+        print(finish-start)
+        Graph.graph(df)
+
+###########################  Twitter__________Users           #######################  
+class TwitterUser:
+    def twitter_user():
+        user ="BillGates"
+        start_date = "2021-11-1"
+        post = api.user_timeline(screen_name = user, count=100,tweet_mode="extended")
+        #Create a DF 
+        df = pd.DataFrame([tweet.full_text for tweet in post], columns=['Tweets'])
+        #Remove special Char
+        start = datetime.datetime.now()
+        df['Tweets'] = df['Tweets'].apply(CleanText.cleanText)
+        finish = datetime.datetime.now()
+        print(finish-start)
+        #create new columns
+        start = datetime.datetime.now()
+        df['subjectivity']= df['Tweets'].apply(SubandPol.getSubjectivity)
+        df['polarity']=df['Tweets'].apply(SubandPol.getPolarity)
+        df['Analysis'] = df['polarity'].apply(Analysis.getAnalysis)
+        finish = datetime.datetime.now()
+        print(finish-start)
+        Graph.graph(df)
