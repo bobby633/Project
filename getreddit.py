@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 
 # reddit crawler
 import praw
-
+from Cleantext import CleanText,SubandPol,Analysis
+from Graph import Graph
 # sentiment analysis
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer 
@@ -31,8 +32,7 @@ class Reddit:
             scores['headline'] = line
             results.append(scores)
             df = pd.DataFrame.from_records(results)
-        df['label'] = 0
-        df.loc[df['compound'] > 0.2, 'label'] = 1
-        df.loc[df['compound'] < -0.2, 'label'] = -1
-        print(df)
+            df['Analysis'] = df['compound'].apply(Analysis.getAnalysis)
+        print(df['Analysis'])
+        Graph.graph(df,'Reddit')
 

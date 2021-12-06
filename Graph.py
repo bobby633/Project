@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import datetime
 class Graph:
-    def graph(df):
+    def graph(df,text):
         
         print("bar scatter,text or pie")
         Choice = input()
@@ -19,7 +19,7 @@ class Graph:
         elif Choice == 'bar':
             df['Analysis'].value_counts()
             #plot and visuals the counts
-            plt.title('sentiment analysis')
+            plt.title(f'sentiment analysis of {text}')
             plt.xlabel('sentiment')
             plt.ylabel('Counts')
             df['Analysis'].value_counts().plot(kind='bar')
@@ -27,7 +27,7 @@ class Graph:
         elif Choice == 'pie':
             df['Analysis'].value_counts()
             #plot and visuals the counts
-            plt.title('sentiment analysis')
+            plt.title(f'sentiment analysis of {text}')
             df['Analysis'].value_counts().plot(kind='pie')
             plt.show()
         elif Choice == 'text':

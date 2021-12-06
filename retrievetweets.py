@@ -54,7 +54,7 @@ class Twitter:
         df['Analysis'] = df['polarity'].apply(Analysis.getAnalysis)
         finish = datetime.datetime.now()
         print(finish-start)
-        Graph.graph(df)
+        Graph.graph(df,'Twitter')
 
 ###########################  Twitter__________Users           #######################  
 class TwitterUser:
@@ -76,4 +76,4 @@ class TwitterUser:
         df['Analysis'] = df['polarity'].apply(Analysis.getAnalysis)
         finish = datetime.datetime.now()
         print(finish-start)
-        Graph.graph(df)
+        Graph.graph(df,'Twitter')
