@@ -1,23 +1,25 @@
 
 
-
-import struct
+from hashlib import sha256
 from flask import Flask,render_template,request,redirect,session,url_for,flash
 from flask_sqlalchemy import SQLAlchemy
+
+from passlib.hash import sha256_crypt
+
+
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-import matplotlib.pyplot as plt
+
 import os
-import seaborn as sns
+
 import tweepy
 import pickle
 import pandas as pd
 import nltk
 from datetime import datetime,timedelta
 from nltk.corpus import stopwords
-
+from profanity_filter import ProfanityFilter 
 from nltk.tokenize import word_tokenize
 
 app = Flask(__name__)
@@ -31,7 +33,7 @@ db = SQLAlchemy(app)
 
 #will remove tensorflow texts in terminal
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
-
+pf = ProfanityFilter()#Nsfw words catcher
 
 # tweepy Credentials
 consumer_key= "Q28ELSx65m8jOSYk0iaZzSye4"
@@ -44,12 +46,14 @@ api = tweepy.API(auth)
 
 class Result_model(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    user = db.Column(db.String(100) )
     search = db.Column(db.String(280) )
     positive = db.Column(db.Integer)
     negative = db.Column(db.Integer)
     neutral = db.Column(db.Integer)
     searched_at = db.Column(db.DateTime,default=datetime.utcnow)
-    def __init__(self,search,positive,negative,neutral):
+    def __init__(self,user,search,positive,negative,neutral):
+        self.user = user
         self.search = search
         self.positive = positive
         self.negative = negative
@@ -57,9 +61,9 @@ class Result_model(db.Model):
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100),unique = True)
-    email = db.Column(db.String(100), unique = True)
-    password = db.Column(db.String(100))
+    name = db.Column(db.String(100),unique = True,nullable = False)
+    email = db.Column(db.String(100), unique = True,nullable = False)
+    password = db.Column(db.String(100),nullable=False)
 
     def __init__(self,name,email,password):
         self.name = name
@@ -77,48 +81,68 @@ with open('tokenizer.pickle','rb') as f:
 @app.route('/')
 def home():
     #nltk.download('stopwords')
-    
-    return render_template('home.html')
+    if "user" in session :
+        name = session['user']
+        return render_template('/home.html',name=name)
+   
+    name = 'guest'
+    return render_template('/home.html',name=name)
 
 @app.route('/search',methods=['GET','POST'])
 def search():
     if request.method == 'POST':
        search =  request.form['search']
        amount = int(request.form['amount'])
-       tweets = tweepy.Cursor(api.search_tweets,q=f'{search} - filter:retweets', lang="en").items(amount)
-       df = pd.DataFrame([tweet.text for tweet in tweets], columns= ['tweets'] )
-       
-       df['tweets'] = clean_text(df["tweets"])
-       df['tweets'] = df['tweets'].apply(remove_stopwords)
-       #df['results'] = df['tweets'].apply(predict_class)
-       df['sentiment'] = df['tweets'].apply(lambda tweets : predict_class([tweets]))
-    #seperating the data into new data
-       positive = df.loc[df['sentiment'] == 'Positive'].count()[0]
-       negative = df.loc[df['sentiment'] == 'Negative'].count()[0]
-       neutral = df.loc[df['sentiment'] == 'Neutral'].count()[0]
+       checked = request.form['checked']
+       if  not checked:
+           print("checked")
+        
+       user = session['user']
+       if pf.is_clean(search):
+        tweets = tweepy.Cursor(api.search_tweets,q=f'{search} - filter:retweets', lang="en").items(amount)
+        df = pd.DataFrame([tweet.text for tweet in tweets], columns= ['tweets'] )
+        
+        df['tweets'] = clean_text(df["tweets"])
+        df['tweets'] = df['tweets'].apply(remove_stopwords)
+        #df['results'] = df['tweets'].apply(predict_class)
+        df['sentiment'] = df['tweets'].apply(lambda tweets : predict_class([tweets]))
+        #seperating the data into new data
+        positive = df.loc[df['sentiment'] == 'Positive'].count()[0]
+        negative = df.loc[df['sentiment'] == 'Negative'].count()[0]
+        neutral = df.loc[df['sentiment'] == 'Neutral'].count()[0]
 
-       #most recent data before updated
-       all_results = Result_model.query.order_by( Result_model.search == search).all()
-       res = all_results[-1]
-       oldPositive = res.positive
-       oldPositive =  list(oldPositive)[::-1]
-       oldPositive =   oldPositive[-1]
-       oldNegative = res.negative
-       oldNegative =  list(oldNegative)[::-1]
-       oldNegative = oldNegative[-1]
-       oldNeutral = res.neutral
-       oldNeutral =  list(oldNeutral)[::-1]
-       oldNeutral = oldNeutral[-1]
-       print(oldNegative,oldNeutral,oldPositive)
-       completed = Result_model(search,positive,negative,neutral) 
+        #most recent data before updated
+        all_results = Result_model.query.filter_by(user = user,search = search).all()
+        user_results = Result_model.query.filter_by(user = user,search = search).all()
+        ress = user_results
+        results = all_results
+        if not results :
+            oldNegative = 0
+            oldNeutral = 0
+            oldPositive = 0
+            completed = Result_model(user,search,positive,negative,neutral) 
+            db.session.add(completed)
+            db.session.commit() 
+            return render_template('/results.html',ress = ress, search = search ,positive=positive,negative=negative,neutral=neutral,oldPositive=oldPositive,oldNegative=oldNegative,oldNeutral=oldNeutral,text = [df.to_html()])
+        else:
+                results = all_results[-1]
+                oldPositive = results.positive
+                oldPositive =  list(oldPositive)[::-1]
+                oldPositive =   oldPositive[-1]
+                oldNegative = results.negative
+                oldNegative =  list(oldNegative)[::-1]
+                oldNegative = oldNegative[-1]
+                oldNeutral = results.neutral
+                oldNeutral =  list(oldNeutral)[::-1]
+                oldNeutral = oldNeutral[-1]
 
+                completed = Result_model(user,search,positive,negative,neutral) 
+                db.session.add(completed)
+                db.session.commit() 
 
-
-       db.session.add(completed)
-       db.session.commit()
-
-       return render_template('/results.html',search = search,positive=positive,negative=negative,neutral=neutral,oldPositive=oldPositive,oldNegative=oldNegative,oldNeutral=oldNeutral)
-
+                return render_template('/results.html',ress = ress, search = search ,positive=positive,negative=negative,neutral=neutral,oldPositive=oldPositive,oldNegative=oldNegative,oldNeutral=oldNeutral,text = [df.to_html()])
+    else:
+        return render_template('/search.html')
     return render_template('/search.html')
 
     
@@ -172,12 +196,7 @@ def predict_class(text):
 
 
 @app.route('/results')
-def result(old):
-    res = Result_model.query.filter(Result_model.searched_at==old)
-    if res:
-        return render_template('results.html',res=res)
-    else:
-        flash("error")
+def result():
     return render_template('results.html')
 
 @app.route("/view")
@@ -193,13 +212,14 @@ def login():
     if request.method == 'POST':
         user = request.form['name']
         password = request.form['password']
-        query = User.query.filter(User.name==user, User.password==password)
+        query = User.query.filter_by(name=user, password=password)
         if  query:
             session.permanent = True      
             session["user"] = user
             return redirect(url_for('home'))
         else:
-            flash("username or password doesnt match")      
+            flash("username or password doesnt match")
+            return redirect(url_for('login'))      
     else:
         if "user" in session :
          return redirect(url_for('home'))   
@@ -213,6 +233,7 @@ def signup():
         user = request.form['name']
         email = request.form['email']
         password = request.form['password']
+        password = sha256_crypt.encrypt(str(password))
         session["user"] = user
         found_user = User.query.filter_by(name=user).first() 
         if found_user:
@@ -245,3 +266,5 @@ if __name__ == "__main__":
     #when finished remove this 
     db.create_all()
     app.run(debug=True)
+
+  
