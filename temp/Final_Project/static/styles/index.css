@@ -117,11 +117,21 @@ padding-top: 15px;
     margin-top: 0;
     text-align: center;
     color: var(--secondary);
-    filter: opacity(0.8) ;
+    filter: opacity(0.9) ;
     padding-bottom: 0;
     margin-bottom: 0;
 }
-
+.warning 
+{
+  font-size : 2em;
+  color:red;
+  padding-bottom: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  font-size: 3em;
+  padding: 0;
+  text-align: center;
+}
 .result-mini-title-positive
 {
   
@@ -197,18 +207,7 @@ padding-top: 15px;
     font-size:1em;
     color: var(--tertiary);
 }
-/*
-html
-{
-    height:100%;
-    margin: 0;
-    padding:0;
-    background: #0B172A;
-    display:flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1.6;
-}*/
+
 .App {
   text-align: center;
   display:flex;
@@ -223,14 +222,7 @@ html
 {
     flex-basis:100%;
 }
-.twitter-logo
-{
-    position: absolute;
-    padding:3em;
-    height:200px;
-    width:200px;
-    top:150px;
-}
+
 
 .App-logo {
   height: 40vmin;
@@ -360,13 +352,13 @@ canvas{
  {
      position: relative;
      left:540px;
-     top:150px;
+     top:20px;
   background: #060d18;
   width: 400px;
   height: 350px;
   padding-top:50px;
        border-radius:20px;
- box-shadow: 2px 2px 4px #000000;
+      box-shadow: 2px 2px 4px #000000;
  }
 .form  input 
 {
@@ -382,6 +374,50 @@ canvas{
     background-color: var(--tertiary);
     border: none;
   
+}
+.text{
+  text-align: center;
+  display: block;
+  width: 400px;
+  top:50px;
+  left:545px;
+  position: relative;
+}
+.history
+{
+  font-size: 1.5em;
+  height:200px;
+  width: 95%;
+  margin-left: 40px;
+  padding-left:140px;
+  display: inline-block; 
+ 
+  background: #060d18;
+  overflow: scroll;
+}
+.history > *
+{
+  padding:10px;
+  position: relative;
+  display: inline;
+}
+.history-positive
+{
+  color: #23DC91;
+  position: relative;
+  display: inline;
+}
+.history-negative
+{
+  display: inline;
+  color: #DC236E;
+  position: relative;
+}
+.history-neutral
+{
+  display: inline;
+position: relative;
+  color: #747C8B;
 }
 .welcome
 {
@@ -456,6 +492,7 @@ top:0;
   {
     color:var(--secondary);
   }
+  
 }
 
 .App-header {

@@ -5,8 +5,7 @@
 <p class = "title-name">Registration</p>
 <form action = "/signup" method = "POST" class = "form" >
 <input type = "name"  placeholder = " enter name"  required name = "name"/>
-<input type = "email"  autocomplete="off" required placeholder = " enter email" name = "email" />
-<input type = "password"  placeholder = " enter password" required name = "password" />
+<input type = "password"  placeholder = " enter password" required name = "password" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" />
 <input type = "submit" value = "submit" />
 
 </form>

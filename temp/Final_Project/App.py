@@ -48,9 +48,9 @@ class Result_model(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user = db.Column(db.String(100) )
     search = db.Column(db.String(280) )
-    positive = db.Column(db.Integer)
-    negative = db.Column(db.Integer)
-    neutral = db.Column(db.Integer)
+    positive = db.Column(db.String(20))
+    negative = db.Column(db.String(20))
+    neutral = db.Column(db.String(20))
     searched_at = db.Column(db.DateTime,default=datetime.utcnow)
     def __init__(self,user,search,positive,negative,neutral):
         self.user = user
@@ -62,12 +62,10 @@ class Result_model(db.Model):
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100),unique = True,nullable = False)
-    email = db.Column(db.String(100), unique = True,nullable = False)
     password = db.Column(db.String(100),nullable=False)
 
-    def __init__(self,name,email,password):
+    def __init__(self,name,password):
         self.name = name
-        self.email = email
         self.password = password
 
 
@@ -75,8 +73,8 @@ class User(db.Model):
 
 with open('sentiment_model','rb') as f:
     model = pickle.load(f)
-with open('tokenizer.pickle','rb') as f:
-    tokenize = pickle.load(f)
+with open('tokenizer.pickle','rb') as t:
+    tokenize = pickle.load(t)
 
 @app.route('/')
 def home():
@@ -84,68 +82,116 @@ def home():
     if "user" in session :
         name = session['user']
         return render_template('/home.html',name=name)
-   
-    name = 'guest'
-    return render_template('/home.html',name=name)
+    else:
+        return redirect(url_for('login'))
 
 @app.route('/search',methods=['GET','POST'])
 def search():
     if request.method == 'POST':
-       search =  request.form['search']
-       amount = int(request.form['amount'])
-       checked = request.form['checked']
-       if  not checked:
-           print("checked")
+        search =  request.form['search']
+        amount = int(request.form['amount'])
         
-       user = session['user']
-       if pf.is_clean(search):
-        tweets = tweepy.Cursor(api.search_tweets,q=f'{search} - filter:retweets', lang="en").items(amount)
-        df = pd.DataFrame([tweet.text for tweet in tweets], columns= ['tweets'] )
-        
-        df['tweets'] = clean_text(df["tweets"])
-        df['tweets'] = df['tweets'].apply(remove_stopwords)
-        #df['results'] = df['tweets'].apply(predict_class)
-        df['sentiment'] = df['tweets'].apply(lambda tweets : predict_class([tweets]))
-        #seperating the data into new data
-        positive = df.loc[df['sentiment'] == 'Positive'].count()[0]
-        negative = df.loc[df['sentiment'] == 'Negative'].count()[0]
-        neutral = df.loc[df['sentiment'] == 'Neutral'].count()[0]
+        user = session['user']
+        if pf.is_clean(search):
+            tweets = tweepy.Cursor(api.search_tweets,q=f'{search} - filter:retweets', lang="en").items(amount)
+            df = pd.DataFrame([tweet.text for tweet in tweets], columns= ['tweets'] )
+            
+            df['tweets'] = clean_text(df["tweets"])
+            df['tweets'] = df['tweets'].apply(remove_stopwords)
+            #df['results'] = df['tweets'].apply(predict_class)
+            df['sentiment'] = df['tweets'].apply(lambda tweets : predict_class([tweets]))
+            #seperating the data into new data
+            positive = df.loc[df['sentiment'] == 'Positive'].count()[0]
+            negative = df.loc[df['sentiment'] == 'Negative'].count()[0]
+            neutral = df.loc[df['sentiment'] == 'Neutral'].count()[0]
 
-        #most recent data before updated
-        all_results = Result_model.query.filter_by(user = user,search = search).all()
-        user_results = Result_model.query.filter_by(user = user,search = search).all()
-        ress = user_results
-        results = all_results
-        if not results :
-            oldNegative = 0
-            oldNeutral = 0
-            oldPositive = 0
-            completed = Result_model(user,search,positive,negative,neutral) 
-            db.session.add(completed)
-            db.session.commit() 
-            return render_template('/results.html',ress = ress, search = search ,positive=positive,negative=negative,neutral=neutral,oldPositive=oldPositive,oldNegative=oldNegative,oldNeutral=oldNeutral,text = [df.to_html()])
+            #most recent data before updated
+            all_results = Result_model.query.filter_by(user = user,search = search).all()
+            user_results = Result_model.query.filter_by(user = user,search = search).all()
+            ress = user_results
+            results = all_results
+            if not results :
+                oldNegative = 0
+                oldNeutral = 0
+                oldPositive = 0
+                completed = Result_model(user,search,str(positive),str(negative),str(neutral)) 
+                db.session.add(completed)
+                db.session.commit() 
+                return render_template('/results.html',ress = ress, search = search ,positive=positive,negative=negative,neutral=neutral,oldPositive=oldPositive,oldNegative=oldNegative,oldNeutral=oldNeutral,text = [df.to_html()])
+            else:
+                    results = all_results[-1]
+                    oldPositive = int(results.positive)
+                   
+                    
+                    oldNegative = int(results.negative)
+   
+                    oldNeutral = int(results.neutral)
+
+
+                    completed = Result_model(user,search,str(positive),str(negative),str(neutral)) 
+                    db.session.add(completed)
+                    db.session.commit() 
+
+                    return render_template('/results.html',ress = ress, search = search ,positive=positive,negative=negative,neutral=neutral,oldPositive=oldPositive,oldNegative=oldNegative,oldNeutral=oldNeutral,text = [df.to_html()])
         else:
-                results = all_results[-1]
-                oldPositive = results.positive
-                oldPositive =  list(oldPositive)[::-1]
-                oldPositive =   oldPositive[-1]
-                oldNegative = results.negative
-                oldNegative =  list(oldNegative)[::-1]
-                oldNegative = oldNegative[-1]
-                oldNeutral = results.neutral
-                oldNeutral =  list(oldNeutral)[::-1]
-                oldNeutral = oldNeutral[-1]
+            return render_template('/search.html')
+    return render_template('/search.html')
 
+@app.route('/search-user',methods=['GET','POST'])
+def search_user():
+    if request.method == 'POST':
+        search =  request.form['search']
+        amount = int(request.form['amount'])
+        
+        user = session['user']
+        if pf.is_clean(search):
+            post = api.user_timeline(screen_name = search,count=amount,tweet_mode="extended")
+            #Create a DF 
+            df = pd.DataFrame([tweet.full_text for tweet in post], columns=['tweets'])
+            df['tweets'] = clean_text(df["tweets"])
+            df['tweets'] = df['tweets'].apply(remove_stopwords)
+            #df['results'] = df['tweets'].apply(predict_class)
+            df['sentiment'] = df['tweets'].apply(lambda tweets : predict_class([tweets]))
+            #seperating the data into new data
+            positive = df.loc[df['sentiment'] == 'Positive'].count()[0]
+            negative = df.loc[df['sentiment'] == 'Negative'].count()[0]
+            neutral = df.loc[df['sentiment'] == 'Neutral'].count()[0]
+
+            #most recent data before updated
+            all_results = Result_model.query.filter_by(user = user,search = search).all()
+            user_results = Result_model.query.filter_by(user = user,search = search).all()
+            ress = user_results
+            results = all_results
+            if not results :
+                oldNegative = 0
+                oldNeutral = 0
+                oldPositive = 0
                 completed = Result_model(user,search,positive,negative,neutral) 
                 db.session.add(completed)
                 db.session.commit() 
-
                 return render_template('/results.html',ress = ress, search = search ,positive=positive,negative=negative,neutral=neutral,oldPositive=oldPositive,oldNegative=oldNegative,oldNeutral=oldNeutral,text = [df.to_html()])
-    else:
-        return render_template('/search.html')
-    return render_template('/search.html')
+            else:
+                    results = all_results[-1]
+                    oldPositive = results.positive
+                    oldPositive =  list(oldPositive)[::-1]
+                    oldPositive =   oldPositive[-1]
+                    oldNegative = results.negative
+                    oldNegative =  list(oldNegative)[::-1]
+                    oldNegative = oldNegative[-1]
+                    oldNeutral = results.neutral
+                    oldNeutral =  list(oldNeutral)[::-1]
+                    oldNeutral = oldNeutral[-1]
 
-    
+                    completed = Result_model(user,search,positive,negative,neutral) 
+                    db.session.add(completed)
+                    db.session.commit() 
+
+                    return render_template('/results.html',ress = ress, search = search ,positive=positive,negative=negative,neutral=neutral,oldPositive=oldPositive,oldNegative=oldNegative,oldNeutral=oldNeutral,text = [df.to_html()])
+        else:
+            return render_template('/search-user.html')
+    return render_template('/search-user.html')    
+
+
 def clean_text(df):
     df = df.str.lower()
     df =df.str.replace(r"(?:\@|http?\://|https?\://|www)\S+"," ")
@@ -194,14 +240,21 @@ def predict_class(text):
 
 
 
-
+@app.route('/history',methods=['GET','POST'])
+def history():
+    if request.method == 'POST':
+        if "user" in session:
+            search =  request.form['search']
+            user = session['user']
+            
+            return render_template('history.html',values = Result_model.query.filter_by(user = user,search = search).all())
+        else:
+            return redirect(url_for('login'))
+    return render_template('history.html')
 @app.route('/results')
 def result():
     return render_template('results.html')
 
-@app.route("/view")
-def view():
-    return render_template("view.html",values=User.query.all())
 
 @app.route('/about')
 def about():
@@ -212,14 +265,14 @@ def login():
     if request.method == 'POST':
         user = request.form['name']
         password = request.form['password']
-        query = User.query.filter_by(name=user, password=password)
+        query = User.query.filter_by(name=user,password=password).first() 
         if  query:
             session.permanent = True      
             session["user"] = user
             return redirect(url_for('home'))
         else:
-            flash("username or password doesnt match")
-            return redirect(url_for('login'))      
+            warning = "error try again"
+            return render_template('login.html',warning=warning)      
     else:
         if "user" in session :
          return redirect(url_for('home'))   
@@ -231,18 +284,11 @@ def signup():
     if request.method == 'POST':
         session.permanent = True
         user = request.form['name']
-        email = request.form['email']
         password = request.form['password']
-        password = sha256_crypt.encrypt(str(password))
         session["user"] = user
-        found_user = User.query.filter_by(name=user).first() 
-        if found_user:
-            flash( "user already exist try another name")
-        else:
-            usr = User(user,email,password)
-            db.session.add(usr)
-            db.session.commit()
-
+        usr = User(user,password)
+        db.session.add(usr)
+        db.session.commit()
         return redirect(url_for('home'))
     else:
         if "user" in session :
@@ -252,7 +298,7 @@ def signup():
 @app.route('/logout')
 def logout():
     session.pop("user",None)
-
+    session.pop("password",None)
     return redirect(url_for('home'))
     
 
@@ -265,6 +311,7 @@ def logout():
 if __name__ == "__main__":
     #when finished remove this 
     db.create_all()
+    
     app.run(debug=True)
 
   
