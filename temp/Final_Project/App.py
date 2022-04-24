@@ -1,10 +1,8 @@
 
 
-from hashlib import sha256
-from flask import Flask,render_template,request,redirect,session,url_for,flash
+from flask import Flask,render_template,request,redirect,session,url_for
 from flask_sqlalchemy import SQLAlchemy
 
-from passlib.hash import sha256_crypt
 
 
 from keras.preprocessing.text import Tokenizer
@@ -17,10 +15,13 @@ import tweepy
 import pickle
 import pandas as pd
 import nltk
+##download once
+nltk.download("stopwords")
 from datetime import datetime,timedelta
 from nltk.corpus import stopwords
 from profanity_filter import ProfanityFilter 
-from nltk.tokenize import word_tokenize
+
+
 
 app = Flask(__name__)
 app.secret_key = "secret_key"
