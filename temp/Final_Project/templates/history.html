@@ -1,3 +1,9 @@
+<!--
+    this displays the data looked up and
+     returns each instance of the word being looked up
+    by the user 
+-->
+
 {% extends 'template.html' %}
 {%block title%}Sentiment Analysis{%endblock%}
 
@@ -13,6 +19,7 @@
         <div class = "history">
         {% for item in values%}
          <div ><p>
+             <!-- each search word is placed beside their sentiment value with is being color coded to make the sentiment-->
              <p>Search : {{item.search}}
             <p class = "history-positive"> Positive : {{item.positive}}</p>
             <p class = "history-negative"> Negative :{{item.negative}} </p>

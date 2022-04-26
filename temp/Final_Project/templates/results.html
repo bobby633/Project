@@ -1,8 +1,17 @@
+
+<!--
+  the results displayes the searched data inside a nice designe
+  using chartjs to make the data appear visually appealing 
+
+-->
 {% extends 'template.html' %}
 {%block title%}Sentiment Analysis{%endblock%}
 
 {%block content%}
 <p class = "title-name">Sentiment Analysis Results</p><br><p class = "subtitle"> for  "{{search}}"</p>
+<!--
+  each div inside the "columns" div displays a graph to be viewd with the last div being the tweets
+-->
 <div class = "columns">
   <div class = "result-border">
     <p class= "result-text" >Bar Chart</p>
@@ -22,6 +31,7 @@
  </div>
  <div class = "result-border" >
    <p class= "result-text" >Text + Sentiment<p>
+     <!-- the tweets and sentiment analysis-->
    {%for result in text%}
    <p>{{result | safe}}</p>
      {% endfor %}
@@ -37,8 +47,11 @@
   
     
 <script>
-     console.log({{oldPositive}},{{oldNegative}},{{oldNeutral}});
-
+    /*
+        the compare graph takes in the previous time 
+        that current search word was looked up
+        and displays it as a bar graph
+    */
      const compareData = {
       labels: ["positive","negative","neutral"],
       datasets: [{
@@ -67,7 +80,9 @@
     },});
 
 
-
+      /*
+      the bar chart displays the sentiments value  
+      */
 
         const data = {
                 labels: ["positive","negative","neutral"],

@@ -494,7 +494,10 @@ top:0;
   }
   
 }
+::-webkit-scrollbar-thumb {
+  background: transparent; 
 
+}
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
