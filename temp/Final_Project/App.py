@@ -134,7 +134,7 @@ def search():
         amount = int(request.form['amount'])
         
         user = session['user']
-    
+
         tweets = tweepy.Cursor(api.search_tweets,q=f'{search} - filter:retweets', lang="en").items(amount)
         df = pd.DataFrame([tweet.text for tweet in tweets], columns= ['tweets'] )
         #preprocessed tweets are cleaned
@@ -197,6 +197,7 @@ def search_user():
         amount = int(request.form['amount'])       
         user = session['user']
         post = api.user_timeline(screen_name = search,count=amount,tweet_mode="extended")
+        
         #Create a DF 
         df = pd.DataFrame([tweet.full_text for tweet in post], columns=['tweets'])
         #preprocessed tweets are cleaned
@@ -392,6 +393,6 @@ def predict_class(text):
 
 
 if __name__ == "__main__":
-    port = int(os.eviron.get('PORT',33507))    
+ 
     db.create_all()
-    waitress.server(app,port=port)
+    app.run()
